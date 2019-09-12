@@ -26,8 +26,9 @@ class OpenOnWeb(sublime_plugin.WindowCommand):
         if len(filename) > 0:
             git_root = self.get_git_root(filename)
             relative = get_git_relative_path(git_root, filename)
+            branch = self.get_git_current_branch(filename)
 
-            url = self.get_setting(BASE_URL_KEY) + relative
+            url = self.get_setting(BASE_URL_KEY).format(branch = branch, path = relative)
             print(url)
             open_in_browser(url)
 
@@ -41,7 +42,7 @@ class OpenOnWeb(sublime_plugin.WindowCommand):
 
     def get_git_root(self, filename):
         cwd = os.path.dirname(filename)
-        psd = subprocess.Popen([self.get_setting(GIT_COMMAND_KEY), 'rev-parse', "--show-toplevel"], shell=True, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        psd = subprocess.Popen([self.get_setting(GIT_COMMAND_KEY), "rev-parse", "--show-toplevel"], shell=True, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         root = str(psd.communicate()[0])
 
         # Path may have trailing escaped \n', remove.
@@ -56,6 +57,21 @@ class OpenOnWeb(sublime_plugin.WindowCommand):
         if not os.path.exists(root):
             raise Exception("Problem determining git repo root.")
         return root
+
+    def get_git_current_branch(self, filename):
+        cwd = os.path.dirname(filename)
+        psd = subprocess.Popen([self.get_setting(GIT_COMMAND_KEY), "rev-parse", "--abbrev-ref", "HEAD"], shell=True, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        branch = str(psd.communicate()[0])
+
+        # Path may have trailing escaped \n', remove.
+        if branch.endswith("\\n'"):
+            branch = branch[:-3]
+        if branch.startswith("b'"):
+            branch = branch[2:]
+
+        # We'll deal only with /
+        branch = branch.replace("\\", "/")
+        return branch
 
 
 def get_git_relative_path(git_root, filename):
