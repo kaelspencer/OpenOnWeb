@@ -36,7 +36,9 @@ class OpenOnWeb(sublime_plugin.WindowCommand):
         settings = sublime.load_settings("OpenOnWeb.sublime-settings")
         project_data = self.window.project_data()
 
-        if project_data is not None and project_data[PLUGIN_NAME] is not None and key in project_data[PLUGIN_NAME]:
+        if project_data is not None and \
+           PLUGIN_NAME in project_data and \
+           key in project_data[PLUGIN_NAME]:
             return project_data[PLUGIN_NAME][key]
         return settings.get(key)
 
